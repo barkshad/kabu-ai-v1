@@ -1,8 +1,8 @@
 import { supabase } from '../../lib/supabase';
 
-// Helper to determine the path: users/{firebaseUid}/files/{fileName}
-const getFilePath = (firebaseUid: string, fileName: string) => {
-  return `users/${firebaseUid}/files/${fileName}`;
+// Helper to determine the path: users/{userId}/files/{fileName}
+const getFilePath = (userId: string, fileName: string) => {
+  return `users/${userId}/files/${fileName}`;
 };
 
 const BUCKET_NAME = 'user-files'; // Default bucket name, assume configured in Supabase
@@ -11,12 +11,12 @@ export const SupabaseStorage = {
   /**
    * Uploads a file to Supabase Storage
    * @param file The file object to upload
-   * @param firebaseUid The Firebase UID of the logged-in user
+   * @param userId The ID of the logged-in user
    * @param fileName Optional custom file name, defaults to the original file name
    */
-  async uploadFile(file: File, firebaseUid: string, fileName?: string): Promise<{ path: string, url: string }> {
+  async uploadFile(file: File, userId: string, fileName?: string): Promise<{ path: string, url: string }> {
     const targetName = fileName || `${Date.now()}_${file.name}`;
-    const filePath = getFilePath(firebaseUid, targetName);
+    const filePath = getFilePath(userId, targetName);
 
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
@@ -60,11 +60,11 @@ export const SupabaseStorage = {
 
   /**
    * Lists all files for a specific user
-   * @param firebaseUid The Firebase UID of the logged-in user
+   * @param userId The ID of the logged-in user
    */
-  async listUserFiles(firebaseUid: string): Promise<any[]> {
+  async listUserFiles(userId: string): Promise<any[]> {
     // Note: Supabase storage list uses folder path
-    const folderPath = `users/${firebaseUid}/files`;
+    const folderPath = `users/${userId}/files`;
     
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)

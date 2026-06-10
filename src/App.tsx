@@ -1,6 +1,6 @@
 import { useEffect, useState, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { User } from 'firebase/auth';
+import { User } from '@supabase/supabase-js';
 import { AuthService } from './services/auth';
 import { Layout } from './components/Layout';
 
@@ -37,7 +37,7 @@ function ProtectedRoute({ requireAdmin = false }: { requireAdmin?: boolean }) {
   if (!user) return <Navigate to="/login" replace />;
   
   // Note: For a real app we'd check Custom Claims or DB for admin role. 
-  // Since we use Firebase Auth ONLY for now, anyone logged in passes basic auth, 
+  // Since we use Supabase Auth ONLY for now, anyone logged in passes basic auth, 
   // but if requireAdmin is true, we might mock restrict it or allow for preview.
   
   return <Layout />;

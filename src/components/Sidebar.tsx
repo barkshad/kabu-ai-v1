@@ -51,7 +51,7 @@ export function Sidebar() {
            <span className="material-symbols-outlined">person</span>
          </div>
          <div className="flex flex-col">
-           <span className="text-on-surface text-[14px] font-semibold truncate max-w-[140px]">{user?.displayName || 'Kabu Student'}</span>
+           <span className="text-on-surface text-[14px] font-semibold truncate max-w-[140px]">{user?.user_metadata?.full_name || 'Kabu Student'}</span>
            <span className="text-outline text-[12px]">Kabarak University</span>
          </div>
       </div>

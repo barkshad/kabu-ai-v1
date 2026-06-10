@@ -29,14 +29,14 @@ export default function Settings() {
           <div className="flex flex-col gap-6">
             <div className="flex flex-col items-start gap-2">
               <div className="w-20 h-20 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-[32px] text-primary">
-                 {user?.displayName?.charAt(0) || 'K'}
+                 {user?.user_metadata?.full_name?.charAt(0) || 'K'}
               </div>
               <button className="text-primary text-[14px] hover:underline font-medium">Change Avatar</button>
             </div>
             
             <div>
                <label className="block text-[12px] font-medium text-on-surface-variant mb-1">Full Name</label>
-               <input type="text" defaultValue={user?.displayName || ''} className="w-full bg-surface-container border border-outline-variant rounded-xl p-3 text-on-surface focus:outline-none focus:border-primary" />
+               <input type="text" defaultValue={user?.user_metadata?.full_name || ''} className="w-full bg-surface-container border border-outline-variant rounded-xl p-3 text-on-surface focus:outline-none focus:border-primary" />
             </div>
             
             <div>

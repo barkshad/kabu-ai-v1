@@ -1,25 +1,28 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/auth';
 import { Logo } from '../components/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !password) return;
     setError('');
     setMessage('');
     setLoading(true);
     try {
-      await AuthService.sendLoginLink(email);
-      setMessage('A magic link has been sent to your email. Please check your inbox.');
+      await AuthService.login(email, password);
+      navigate('/workspace');
     } catch (err: any) {
-      setError(err.message || 'Failed to send login link');
+      setError(err.message || 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -48,7 +51,7 @@ export default function Login() {
         )}
 
         <h1 className="text-headline-lg font-bold text-center mb-1">Welcome Back</h1>
-        <p className="text-body-sm text-on-surface-variant text-center mb-8">Sign in with a magic link to your Workspace</p>
+        <p className="text-body-sm text-on-surface-variant text-center mb-8">Sign in to your Workspace</p>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
@@ -66,12 +69,37 @@ export default function Login() {
             </div>
           </div>
 
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-label-lg text-on-surface-variant">Password</label>
+              <Link to="/forgot-password" className="text-primary text-[12px] hover:text-on-surface transition-colors">Forgot password?</Link>
+            </div>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">lock</span>
+              <input 
+                type={showPassword ? 'text' : 'password'} 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full h-[52px] bg-surface-container-low border border-outline-variant focus:border-primary rounded-xl pl-12 pr-12 text-on-surface placeholder-outline focus:outline-none"
+                placeholder="••••••••"
+                required
+              />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility' : 'visibility_off'}</span>
+              </button>
+            </div>
+          </div>
+
           <button 
             type="submit" 
             disabled={loading}
             className="w-full h-[48px] bg-primary-container text-on-primary-container hover:bg-inverse-primary rounded-xl font-label-lg transition-colors disabled:opacity-50 mt-2"
           >
-            {loading ? 'Sending link...' : 'Send Magic Link →'}
+            {loading ? 'Signing in...' : 'Sign In →'}
           </button>
         </form>
 

@@ -1,19 +1,29 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/auth';
 import { Logo } from '../components/Logo';
 
 export default function Register() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) {
       setError("Please agree to the terms.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
     if (!email.endsWith('@kabarak.ac.ke') && !email.endsWith('@student.kabarak.ac.ke')) {
@@ -24,10 +34,15 @@ export default function Register() {
     setMessage('');
     setLoading(true);
     try {
-      await AuthService.sendLoginLink(email);
-      setMessage('A registration link has been sent to your email. Please check your inbox.');
+      if (password) {
+        await AuthService.register(email, password, name);
+        navigate('/workspace');
+      } else {
+        await AuthService.sendLoginLink(email);
+        setMessage('A registration link has been sent to your email. Please check your inbox.');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to send register link');
+      setError(err.message || 'Failed to register');
     } finally {
       setLoading(false);
     }
@@ -60,6 +75,21 @@ export default function Register() {
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
+            <label className="block text-label-lg text-on-surface-variant mb-1">Full Name</label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">person</span>
+              <input 
+                type="text" 
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full h-[52px] bg-surface-container-low border border-outline-variant focus:border-primary rounded-xl pl-12 pr-4 text-on-surface placeholder-outline focus:outline-none"
+                placeholder="John Doe"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
             <label className="block text-label-lg text-on-surface-variant mb-1">University Email</label>
             <div className="relative mb-2">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">mail</span>
@@ -80,6 +110,50 @@ export default function Register() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-label-lg text-on-surface-variant mb-1">Password</label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">lock</span>
+              <input 
+                type={showPassword ? 'text' : 'password'} 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full h-[52px] bg-surface-container-low border border-outline-variant focus:border-primary rounded-xl pl-12 pr-12 text-on-surface placeholder-outline focus:outline-none"
+                placeholder="••••••••"
+                required
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)} 
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility' : 'visibility_off'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-label-lg text-on-surface-variant mb-1">Confirm Password</label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">autorenew</span>
+              <input 
+                type={showConfirmPassword ? 'text' : 'password'} 
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                className="w-full h-[52px] bg-surface-container-low border border-outline-variant focus:border-primary rounded-xl pl-12 pr-12 text-on-surface placeholder-outline focus:outline-none"
+                placeholder="••••••••"
+                required
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[20px]">{showConfirmPassword ? 'visibility' : 'visibility_off'}</span>
+              </button>
+            </div>
+          </div>
+
           <label className="flex items-start gap-3 cursor-pointer py-2">
             <input 
               type="checkbox" 
@@ -97,7 +171,7 @@ export default function Register() {
             disabled={loading}
             className="w-full h-[48px] bg-primary-container text-on-primary-container hover:bg-inverse-primary rounded-xl font-label-lg transition-colors disabled:opacity-50 mt-2"
           >
-            {loading ? 'Sending link...' : 'Send Magic Link →'}
+            {loading ? 'Processing...' : 'Create Account →'}
           </button>
         </form>
 

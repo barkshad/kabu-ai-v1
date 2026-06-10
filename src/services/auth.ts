@@ -1,54 +1,82 @@
-import { 
-  signOut, 
-  onAuthStateChanged,
-  User,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink
-} from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 export const AuthService = {
   subscribeToAuthChanges(callback: (user: User | null) => void) {
-    if (!auth) {
-      callback(null);
-      return () => {};
+    // Initial fetch
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      callback(session?.user || null);
+    });
+
+    // Listen for changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        callback(session?.user || null);
+      }
+    );
+
+    return () => authListener.subscription.unsubscribe();
+  },
+
+  async login(email: string, password?: string) {
+    if (password) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      return data.user;
+    } else {
+      return this.sendLoginLink(email);
     }
-    return onAuthStateChanged(auth, callback);
+  },
+
+  async register(email: string, password?: string, fullName?: string) {
+    if (password) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
+      if (error) throw error;
+      return data.user;
+    } else {
+      return this.sendLoginLink(email);
+    }
   },
 
   async sendLoginLink(email: string) {
-    if (!auth) throw new Error("Firebase Auth not initialized");
-    const actionCodeSettings = {
-      url: window.location.origin + '/verify', // Must match our route
-      handleCodeInApp: true,
-    };
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email);
-    } catch (err: any) {
-      console.error("Firebase sendSignInLinkToEmail Error:", err);
-      if (err.code === 'auth/unauthorized-continue-uri') {
-        throw new Error(`Domain not allowed by Firebase. Please add "${window.location.hostname}" to the Authorized Domains list in your Firebase Console (Authentication -> Settings).`);
-      }
-      throw err;
-    }
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin + '/verify',
+      },
+    });
+    if (error) throw error;
+    window.localStorage.setItem('emailForSignIn', email);
   },
 
   isSignInLink(link: string) {
-    if (!auth) return false;
-    return isSignInWithEmailLink(auth, link);
+    return link.includes('access_token=') || link.includes('type=magiclink');
   },
 
-  async verifySignInLink(email: string, link: string) {
-    if (!auth) throw new Error("Firebase Auth not initialized");
-    const result = await signInWithEmailLink(auth, email, link);
+  async verifySignInLink(email: string, link?: string) {
+    // Supabase handles the magic link token automatically via the URL fragment.
+    // getSession will automatically exchange the #access_token if present.
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (!data.session) throw new Error("No active session. Magic link may have expired.");
     window.localStorage.removeItem('emailForSignIn');
-    return result.user;
+    return data.session.user;
   },
 
   async logout() {
-    if (!auth) throw new Error("Firebase Auth not initialized");
-    await signOut(auth);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   }
 };
+
